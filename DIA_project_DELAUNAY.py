@@ -9,6 +9,7 @@ import folium
 from folium.plugins import MarkerCluster
 import plotly.express as px
 from geopy.geocoders import Nominatim
+import json
 
 st.sidebar.title('Menu')
 st.sidebar.subheader('Data Visualisation project')
@@ -161,7 +162,6 @@ instant_fuel['latitude']=instant_fuel['latitude'].astype(float)
 instant_fuel=instant_fuel.drop(columns=['geom'])
 instant_fuel['prix_id']=instant_fuel['prix_id'].astype(int)
 instant_fuel['prix_valeur']=instant_fuel['prix_valeur'].astype(float)
-instant_fuel['prix_valeur']=instant_fuel['prix_valeur'].round(2)
 instant_fuel['prix_nom'] = instant_fuel['prix_nom'].astype(str)
 #instant_fuel['com_arm_code']=instant_fuel['com_arm_code'].astype(int)
 instant_fuel['com_arm_name']=instant_fuel['com_arm_name'].astype(str)
@@ -176,20 +176,53 @@ instant_fuel['horaires_automate_24_24']=instant_fuel['horaires_automate_24_24'].
 instant_fuel['horaires_automate_24_24']=instant_fuel['horaires_automate_24_24'].replace('Oui',1)
 instant_fuel['horaires_automate_24_24']=instant_fuel['horaires_automate_24_24'].replace('Non',0)
 instant_fuel = instant_fuel.sort_values(by='id').reset_index(drop=True)
+instant_fuel.drop(columns=['pop', 'prix_id', 'com_arm_code', 'epci_code', 'dep_code'], inplace=True)
 
-median_prices = instant_fuel.groupby('prix_nom')['prix_valeur'].median()
-def categorize_price(price, median, percentile_33_high, percentile_33_low):
-    if price >= percentile_33_high:
+def preprocess_horaires(horaires_str):
+    horaires_str = horaires_str.replace('""', '"')
+    return horaires_str
+
+instant_fuel['horaires'] = instant_fuel['horaires'].apply(preprocess_horaires)
+
+def extract_hours(row):
+    try:
+        horaires = json.loads(row['horaires'])
+        automate = horaires.get('@automate-24-24')
+        jour = horaires.get('jour', [])
+
+        if automate == "1":
+            return 'h24', 'h24'
+
+        for day in jour:
+            if 'horaire' in day:
+                return day['horaire'].get('@ouverture'), day['horaire'].get('@fermeture')
+
+    except json.JSONDecodeError:
+        pass
+
+    return None, None
+
+instant_fuel[['ouverture', 'fermeture']] = instant_fuel.apply(extract_hours, axis=1, result_type='expand')
+
+instant_fuel.loc[instant_fuel['horaires_automate_24_24'] == 1, 'ouverture'] = '00:00:00'
+instant_fuel.loc[instant_fuel['horaires_automate_24_24'] == 1, 'fermeture'] = '23:59:59'
+
+mean_prices = instant_fuel.groupby('prix_nom')['prix_valeur'].mean().reset_index()
+instant_fuel = instant_fuel.merge(mean_prices, on='prix_nom', suffixes=('', '_mean'))
+
+def categorize_prix(row):
+    if row['prix_valeur'] > (1.005 * row['prix_valeur_mean']):
         return 'cher'
-    elif price <= percentile_33_low:
+    elif row['prix_valeur'] < (0.995 * row['prix_valeur_mean']):
         return 'bas'
     else:
         return 'moyen'
-percentile_33_high = instant_fuel.groupby('prix_nom')['prix_valeur'].quantile(0.67)
-percentile_33_low = instant_fuel.groupby('prix_nom')['prix_valeur'].quantile(0.33)
-instant_fuel['prix_categorie'] = instant_fuel.apply(lambda row: categorize_price(row['prix_valeur'], median_prices[row['prix_nom']], percentile_33_high[row['prix_nom']], percentile_33_low[row['prix_nom']]), axis=1)
+
+instant_fuel['prix_categorie'] = instant_fuel.apply(categorize_prix, axis=1)
+instant_fuel = instant_fuel.drop(columns=['prix_valeur_mean'])
 
 station_categories = instant_fuel.groupby('id')['prix_categorie'].apply(list)
+
 def determine_station_category(price_categories):
     bas_count = price_categories.count('bas')
     moyen_count = price_categories.count('moyen')
@@ -208,8 +241,6 @@ station_categories = station_categories.apply(determine_station_category)
 station_category_mapping = station_categories.reset_index().set_index('id')['prix_categorie'].to_dict()
 instant_fuel['station_category'] = instant_fuel['id'].map(station_category_mapping)
 
-
-st.write(median_prices)
 st.write(instant_fuel.head(30))
 
 st.header('III. Data Visualisation')
@@ -222,52 +253,99 @@ def geocode_address(address):
     else:
         return None
 
-search_input = st.text_input("Search for a location")
+search_input = st.text_input("Search for a location:")
 
 colors = {
     'cher': 'red',
-    'moyen': 'blue',
+    'moyen': 'orange',
     'pas cher': 'green',
 }
 
 m = folium.Map(location=[46.6031, 2.3522], zoom_start=5)
+unique_stations = set()
+
+legend_html = """
+<div style="position: fixed; bottom: 50px; left: 50px; z-index:1000; background-color: white; padding: 10px; border: 2px solid gray;">
+    <p><strong>Type of station</strong></p>
+    <p><i class="fa fa-circle" style="color: red;"></i> cher</p>
+    <p><i class="fa fa-circle" style="color: orange;"></i> moyen</p>
+    <p><i class="fa fa-circle" style="color: green;"></i> pas cher</p>
+</div>
+"""
+m.get_root().html.add_child(folium.Element(legend_html))
+
 for i, row in instant_fuel.iterrows():
+    station_id = row['id']
+    if station_id in unique_stations:
+        continue
+    
+    unique_stations.add(station_id)
+    
     station_category = row['station_category']
     if station_category in colors:
         color = colors[station_category]
     else:
         color = 'gray'
-    folium.CircleMarker(
+    
+    fuel_info = ""
+    station_rows = instant_fuel[instant_fuel['id'] == station_id]
+
+    for _, station_row in station_rows.iterrows():
+        prix_nom = station_row['prix_nom']
+        prix_valeur = station_row['prix_valeur']
+        prix_categorie = station_row['prix_categorie']
+        fuel_info += f"<span style='color:{colors.get(prix_categorie, 'green')}'>●</span> {prix_nom}: {prix_valeur} <br>"
+    
+    marker = folium.CircleMarker(
         location=[row['latitude'], row['longitude']],
         radius=5,
         color=color,
         fill=True,
         fill_color=color,
         fill_opacity=0.6,
-    ).add_to(m)
+    )
+    popup_content = f"""<div style='width: 200px; height: 120px;'>
+                        Adresse: {row['adresse']}, {row['ville']} ({row['cp']}) <br><br>
+                        Carburants: <br>{fuel_info} <br>
+                        Horaires: {row['ouverture']} - {row['fermeture']}
+                        </div>"""
+    folium.Popup(popup_content).add_to(marker)
+    marker.add_to(m)
 
 if search_input:
     search_location = geocode_address(search_input)
     if search_location:
-        m.location = search_location
+        folium.Marker(
+            location=search_location,
+            popup="Search Location",
+            icon=folium.Icon(color='purple')
+        ).add_to(m)
     else:
         st.warning("Location not found. Displaying default view.")
 
 st.components.v1.html(m._repr_html_(), height=600)
 
+st.subheader('Filter your research:')
+st.write(' ')
+
 selected_fuel_types = st.selectbox('Select Fuel Types:', instant_fuel['prix_nom'].unique())
-filtered_data = instant_fuel[instant_fuel['prix_nom'] == selected_fuel_types]
-mean_prices_by_date = filtered_data.groupby('date')['prix_valeur'].mean().reset_index()
-fig = px.line(mean_prices_by_date, x='date', y='prix_valeur', title=f'Variation of Mean Price of {selected_fuel_types} in France')
+filtered_data_0 = instant_fuel[instant_fuel['prix_nom'] == selected_fuel_types]
+mean_price = filtered_data_0['prix_valeur'].mean()
+median_price = filtered_data_0['prix_valeur'].median()
+
+col1, col2 = st.columns(2)
+with col1:
+    st.markdown(f"Mean Price of {selected_fuel_types}:\n{mean_price:.3f}")
+with col2:
+    st.markdown(f"Median Price of {selected_fuel_types}:\n{median_price:.3f}")
+
+filtered_data_1 = instant_fuel[instant_fuel['prix_nom'] == selected_fuel_types]
+mean_prices_by_date = filtered_data_1.groupby('date')['prix_valeur'].mean().reset_index()
+fig = px.line(mean_prices_by_date, x='date', y='prix_valeur', title=f'Variation of Mean Price of {selected_fuel_types} in France (2023)')
 fig.update_xaxes(title_text='Date')
 fig.update_yaxes(title_text='Mean Price')
-fig.update_layout(
-    autosize=False,
-    width=1000,
-    height=600
-)
+fig.update_xaxes(range=["2023-01-01", instant_fuel['date'].max()])
 st.plotly_chart(fig)
-
 st.header('IV. Conclusion')
 
 #instant_fuel['services_service'] = instant_fuel['services_service'].str.split('//')
