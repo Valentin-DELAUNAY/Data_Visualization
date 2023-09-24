@@ -245,88 +245,130 @@ st.write(instant_fuel.head(30))
 
 st.header('III. Data Visualisation')
 
-def geocode_address(address):
-    geolocator = Nominatim(user_agent="geocoder")
-    location = geolocator.geocode(address)
-    if location:
-        return location.latitude, location.longitude
-    else:
-        return None
+initial_location = [46.6031, 2.3522]
+initial_zoom = 5
 
-search_input = st.text_input("Search for a location:")
-
-colors = {
-    'cher': 'red',
-    'moyen': 'orange',
-    'pas cher': 'green',
-}
-
-m = folium.Map(location=[46.6031, 2.3522], zoom_start=5)
-unique_stations = set()
-
-legend_html = """
-<div style="position: fixed; bottom: 50px; left: 50px; z-index:1000; background-color: white; padding: 10px; border: 2px solid gray;">
-    <p><strong>Type of station</strong></p>
-    <p><i class="fa fa-circle" style="color: red;"></i> cher</p>
-    <p><i class="fa fa-circle" style="color: orange;"></i> moyen</p>
-    <p><i class="fa fa-circle" style="color: green;"></i> pas cher</p>
-</div>
-"""
-m.get_root().html.add_child(folium.Element(legend_html))
-
-for i, row in instant_fuel.iterrows():
-    station_id = row['id']
-    if station_id in unique_stations:
-        continue
+# Create a function to update the map with data
+def update_map(data, location, zoom, add_marker=False):
+    m = folium.Map(location=location, zoom_start=zoom)
     
-    unique_stations.add(station_id)
-    
-    station_category = row['station_category']
-    if station_category in colors:
-        color = colors[station_category]
-    else:
-        color = 'gray'
-    
-    fuel_info = ""
-    station_rows = instant_fuel[instant_fuel['id'] == station_id]
+    # Define colors for station categories
+    colors = {
+        'cher': 'red',
+        'moyen': 'orange',
+        'pas cher': 'green',
+    }
 
-    for _, station_row in station_rows.iterrows():
-        prix_nom = station_row['prix_nom']
-        prix_valeur = station_row['prix_valeur']
-        prix_categorie = station_row['prix_categorie']
-        fuel_info += f"<span style='color:{colors.get(prix_categorie, 'green')}'>●</span> {prix_nom}: {prix_valeur} <br>"
-    
-    marker = folium.CircleMarker(
-        location=[row['latitude'], row['longitude']],
-        radius=5,
-        color=color,
-        fill=True,
-        fill_color=color,
-        fill_opacity=0.6,
-    )
-    popup_content = f"""<div style='width: 200px; height: 120px;'>
-                        Adresse: {row['adresse']}, {row['ville']} ({row['cp']}) <br><br>
-                        Carburants: <br>{fuel_info} <br>
-                        Horaires: {row['ouverture']} - {row['fermeture']}
-                        </div>"""
-    folium.Popup(popup_content).add_to(marker)
-    marker.add_to(m)
+    for _, row in data.iterrows():
+        station_category = row['station_category']
+        color = colors.get(station_category, 'gray')
 
-if search_input:
-    search_location = geocode_address(search_input)
-    if search_location:
+        # Create a marker for each station
+        marker = folium.CircleMarker(
+            location=[row['latitude'], row['longitude']],
+            radius=5,
+            color=color,
+            fill=True,
+            fill_color=color,
+            fill_opacity=0.6,
+        )
+        
+        # Create popup content for each station
+        fuel_info = ""
+        station_rows = instant_fuel[instant_fuel['id'] == row['id']]
+
+        for _, station_row in station_rows.iterrows():
+            prix_nom = station_row['prix_nom']
+            prix_valeur = station_row['prix_valeur']
+            prix_categorie = station_row['prix_categorie']
+            fuel_info += f"<span style='color:{colors.get(prix_categorie, 'green')}'>●</span> {prix_nom}: {prix_valeur} <br>"
+
+        popup_content = f"""<div style='width: 200px; height: 150px;'>
+                            Adresse: {row['adresse']}, {row['ville']} ({row['cp']}) <br><br>
+                            Carburants: <br>{fuel_info} <br>
+                            Horaires: {row['ouverture']} - {row['fermeture']}
+                            </div>"""
+        folium.Popup(popup_content).add_to(marker)
+        marker.add_to(m)
+    
+    if add_marker:
         folium.Marker(
-            location=search_location,
+            location=location,
             popup="Search Location",
             icon=folium.Icon(color='purple')
         ).add_to(m)
+    
+    legend_html = """
+    <div style="position: fixed; bottom: 50px; left: 50px; z-index:1000; background-color: white; padding: 10px; border: 2px solid gray;">
+        <p><strong>Type of station</strong></p>
+        <p><i class="fa fa-circle" style="color: red;"></i> cher</p>
+        <p><i class="fa fa-circle" style="color: orange;"></i> moyen</p>
+        <p><i class="fa fa-circle" style="color: green;"></i> pas cher</p>
+    </div>
+    """
+    m.get_root().html.add_child(folium.Element(legend_html))
+    
+    return m
+
+# Sidebar UI
+with st.form(key='search_form'):
+    search_input = st.text_input("Search for a location:")
+    search_button = st.form_submit_button("Search")  # Moved the button inside the form
+
+st.write(' ')
+st.subheader('Filter your research:')
+st.write(' ')
+fuel_checkboxes = {}
+st.write('Select the type of fuel you want to see: (initialy Gazole)')
+col1, col2, col3, col4, col5, col6 = st.columns(6)
+for x, col in zip(instant_fuel['prix_nom'].unique(), [col1, col2, col3, col4, col5, col6]):
+    checkbox_key = f"checkbox_{x}"
+    # Initialize only the 'Gazole' checkbox to be checked
+    initial_value = True if x == 'Gazole' else False
+    fuel_checkboxes[x] = col.checkbox(x, key=checkbox_key, value=initial_value)
+selected_fuels = [fuel_type for fuel_type, selected in fuel_checkboxes.items() if selected]
+
+
+# Initialize the map with the default initial_location and initial_zoom
+zoom_level = initial_zoom  # Set the initial zoom level
+add_marker = False  # Don't add a marker at the initial value
+if search_input:
+    # Use geocoding to find the location based on the search input
+    geolocator = Nominatim(user_agent="geocoder")
+    location = geolocator.geocode(search_input)
+    if location:
+        search_location = [location.latitude, location.longitude]
+        zoom_level = 12  # Adjust the zoom level when a location is found
+        add_marker = True  # Add a marker when a location is found
+    else:
+        search_location = initial_location
+else:
+    search_location = initial_location
+
+filtered_data = instant_fuel[instant_fuel['prix_nom'].isin(selected_fuels)]
+
+# Check if the "Search" button is clicked
+if search_button:
+    # Use geocoding to find the location based on the search input
+    geolocator = Nominatim(user_agent="geocoder")
+    location = geolocator.geocode(search_input)
+    
+    if location:
+        search_location = [location.latitude, location.longitude]
+        zoom_level = 12  # Adjust the zoom level when a location is found
+        add_marker = True  # Add a marker when a location is found
+        st.success("Location found. Updating the map.")
     else:
         st.warning("Location not found. Displaying default view.")
 
-st.components.v1.html(m._repr_html_(), height=600)
+# Update the map with the search location and zoom in
+filtered_map = update_map(filtered_data, search_location, zoom_level, add_marker)
 
-st.subheader('Filter your research:')
-st.write(' ')
+# Display the map
+st.components.v1.html(filtered_map._repr_html_(), height=600)
+
+
+
 
 selected_fuel_types = st.selectbox('Select Fuel Types:', instant_fuel['prix_nom'].unique())
 filtered_data_0 = instant_fuel[instant_fuel['prix_nom'] == selected_fuel_types]
