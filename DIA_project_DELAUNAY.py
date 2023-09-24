@@ -8,6 +8,7 @@ import seaborn as sns
 import folium
 from folium.plugins import MarkerCluster
 import plotly.express as px
+import plotly.graph_objects as go
 from geopy.geocoders import Nominatim
 import json
 
@@ -381,13 +382,33 @@ with col1:
 with col2:
     st.markdown(f"Median Price of {selected_fuel_types}:\n{median_price:.3f}")
 
-filtered_data_1 = instant_fuel[instant_fuel['prix_nom'] == selected_fuel_types]
-mean_prices_by_date = filtered_data_1.groupby('date')['prix_valeur'].mean().reset_index()
-fig = px.line(mean_prices_by_date, x='date', y='prix_valeur', title=f'Variation of Mean Price of {selected_fuel_types} in France (2023)')
+overall_mean_price= filtered_data_0['prix_valeur'].mean()
+mean_prices_by_date = filtered_data_0.groupby('date')['prix_valeur'].mean().reset_index()
+overall_mean_price = filtered_data_0['prix_valeur'].mean()
+fig = px.line(
+    mean_prices_by_date,
+    x='date',
+    y='prix_valeur',
+    title=f'Variation of Mean Price of {selected_fuel_types} in France',
+    labels={'prix_valeur': 'Mean Price', 'date': 'Date'},
+)
+fig.add_hline(
+    y=overall_mean_price,
+    line_dash="dash",
+    line_color="red",
+    name=f'Overall Mean Price (2023): {overall_mean_price:.2f}',
+)
 fig.update_xaxes(title_text='Date')
 fig.update_yaxes(title_text='Mean Price')
 fig.update_xaxes(range=["2023-01-01", instant_fuel['date'].max()])
+fig.update_layout(
+    autosize=False,
+    width=1000,
+    height=600
+)
+fig.add_trace(go.Scatter(x=[], y=[], mode='markers', name='dummy', showlegend=True))
 st.plotly_chart(fig)
+
 st.header('IV. Conclusion')
 
 #instant_fuel['services_service'] = instant_fuel['services_service'].str.split('//')
