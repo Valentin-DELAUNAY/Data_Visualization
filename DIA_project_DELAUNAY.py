@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 from PIL import Image
 import seaborn as sns
 import folium
-from folium.plugins import MarkerCluster
+from folium.plugins import HeatMap
 import plotly.express as px
 import plotly.graph_objects as go
 from geopy.geocoders import Nominatim
@@ -94,7 +94,7 @@ st.write('Furthermore, as countries seek to transition towards cleaner and more 
 
 st.header('II. Short presentation of data')
 
-presentation_selection=st.selectbox('Select the type of information you need:', ['The name of the columns', 'The first 10 lines', 'The name of the columns with their type', 'The desciption of the dataset', 'The shape of the dataset', 'The number of missing values and the number of duplicates'])
+presentation_selection=st.selectbox('Select the type of information you need:', ['The name of the columns', 'The first 20 lines', 'The name of the columns with their type', 'The desciption of the dataset', 'The shape of the dataset', 'The number of missing values and the number of duplicates'])
 if (presentation_selection=='The name of the columns'):
     st.write('The dataset contains the following columns:')
     column_names = instant_fuel.columns.tolist()
@@ -110,9 +110,9 @@ if (presentation_selection=='The name of the columns'):
         st.markdown(right_table)
     st.write(' ')
     st.write('The dataset have ' + str(instant_fuel.shape[1]) +' columns in total.')
-elif (presentation_selection=='The first 10 lines'):
-    st.write('The first 10 lines of the dataset are:')
-    st.write(instant_fuel.head(10))
+elif (presentation_selection=='The first 20 lines'):
+    st.write('The first 20 lines of the dataset are:')
+    st.write(instant_fuel.head(20))
 elif (presentation_selection=='The name of the columns with their type'):
     st.write('The dataset contains the following columns with their type:')
     column_info = instant_fuel.dtypes
@@ -242,7 +242,9 @@ station_categories = station_categories.apply(determine_station_category)
 station_category_mapping = station_categories.reset_index().set_index('id')['prix_categorie'].to_dict()
 instant_fuel['station_category'] = instant_fuel['id'].map(station_category_mapping)
 
-st.write(instant_fuel.head(30))
+#instant_fuel['services_service'] = instant_fuel['services_service'].str.split('//')
+#instant_fuel = instant_fuel.explode('services_service')
+#instant_fuel.reset_index(drop=True, inplace=True)
 
 st.header('III. Data Visualisation')
 
@@ -368,19 +370,37 @@ filtered_map = update_map(filtered_data, search_location, zoom_level, add_marker
 # Display the map
 st.components.v1.html(filtered_map._repr_html_(), height=600)
 
+st.write(instant_fuel.head(30))
 
-
+instant_fuel['date'] = pd.to_datetime(instant_fuel['date'])
+instant_fuel = instant_fuel.sort_values(by='date', ascending=True)
+instant_fuel['price_change'] = instant_fuel['prix_valeur'].diff()
 
 selected_fuel_types = st.selectbox('Select Fuel Types:', instant_fuel['prix_nom'].unique())
 filtered_data_0 = instant_fuel[instant_fuel['prix_nom'] == selected_fuel_types]
 mean_price = filtered_data_0['prix_valeur'].mean()
 median_price = filtered_data_0['prix_valeur'].median()
+mean_price_change = filtered_data_0['price_change'].iloc[-1]
+median_price_change = filtered_data_0['price_change'].iloc[-1]
 
+arrow_up="https://cdn-icons-png.flaticon.com/512/7456/7456066.png"
+arrow_down="https://cdn-icons-png.flaticon.com/512/3227/3227489.png"
 col1, col2 = st.columns(2)
 with col1:
-    st.markdown(f"Mean Price of {selected_fuel_types}:\n{mean_price:.3f}")
+    st.write("<div style='display: flex; align-items: center;'>", unsafe_allow_html=True)
+    st.markdown(f"**Mean Price:** {mean_price:.3f}")
+    if mean_price_change > 0:
+        st.image(arrow_up, width=45)
+    elif mean_price_change < 0:
+        st.image(arrow_down, width=45)
+
 with col2:
-    st.markdown(f"Median Price of {selected_fuel_types}:\n{median_price:.3f}")
+    st.write("<div style='display: flex; align-items: center;'>", unsafe_allow_html=True)
+    st.markdown(f"**Median Price:** {median_price:.3f}")
+    if median_price_change > 0:
+        st.image(arrow_up, width=45)
+    elif median_price_change < 0:
+        st.image(arrow_down, width=45)
 
 overall_mean_price= filtered_data_0['prix_valeur'].mean()
 mean_prices_by_date = filtered_data_0.groupby('date')['prix_valeur'].mean().reset_index()
@@ -401,16 +421,9 @@ fig.add_hline(
 fig.update_xaxes(title_text='Date')
 fig.update_yaxes(title_text='Mean Price')
 fig.update_xaxes(range=["2023-01-01", instant_fuel['date'].max()])
-fig.update_layout(
-    autosize=False,
-    width=1000,
-    height=600
-)
 fig.add_trace(go.Scatter(x=[], y=[], mode='markers', name='dummy', showlegend=True))
 st.plotly_chart(fig)
 
-st.header('IV. Conclusion')
+st.write(instant_fuel.head(30))
 
-#instant_fuel['services_service'] = instant_fuel['services_service'].str.split('//')
-#instant_fuel = instant_fuel.explode('services_service')
-#instant_fuel.reset_index(drop=True, inplace=True)
+st.header('IV. Conclusion')
