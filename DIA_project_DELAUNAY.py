@@ -177,36 +177,7 @@ instant_fuel['horaires_automate_24_24']=instant_fuel['horaires_automate_24_24'].
 instant_fuel['horaires_automate_24_24']=instant_fuel['horaires_automate_24_24'].replace('Oui',1)
 instant_fuel['horaires_automate_24_24']=instant_fuel['horaires_automate_24_24'].replace('Non',0)
 instant_fuel = instant_fuel.sort_values(by='id').reset_index(drop=True)
-instant_fuel.drop(columns=['pop', 'prix_id', 'com_arm_code', 'epci_code', 'dep_code'], inplace=True)
-
-def preprocess_horaires(horaires_str):
-    horaires_str = horaires_str.replace('""', '"')
-    return horaires_str
-
-instant_fuel['horaires'] = instant_fuel['horaires'].apply(preprocess_horaires)
-
-def extract_hours(row):
-    try:
-        horaires = json.loads(row['horaires'])
-        automate = horaires.get('@automate-24-24')
-        jour = horaires.get('jour', [])
-
-        if automate == "1":
-            return 'h24', 'h24'
-
-        for day in jour:
-            if 'horaire' in day:
-                return day['horaire'].get('@ouverture'), day['horaire'].get('@fermeture')
-
-    except json.JSONDecodeError:
-        pass
-
-    return None, None
-
-instant_fuel[['ouverture', 'fermeture']] = instant_fuel.apply(extract_hours, axis=1, result_type='expand')
-
-instant_fuel.loc[instant_fuel['horaires_automate_24_24'] == 1, 'ouverture'] = '00:00:00'
-instant_fuel.loc[instant_fuel['horaires_automate_24_24'] == 1, 'fermeture'] = '23:59:59'
+instant_fuel.drop(columns=['pop', 'prix_id', 'com_arm_code', 'epci_code', 'dep_code', 'horaires'], inplace=True)
 
 mean_prices = instant_fuel.groupby('prix_nom')['prix_valeur'].mean().reset_index()
 instant_fuel = instant_fuel.merge(mean_prices, on='prix_nom', suffixes=('', '_mean'))
@@ -242,11 +213,21 @@ station_categories = station_categories.apply(determine_station_category)
 station_category_mapping = station_categories.reset_index().set_index('id')['prix_categorie'].to_dict()
 instant_fuel['station_category'] = instant_fuel['id'].map(station_category_mapping)
 
-#instant_fuel['services_service'] = instant_fuel['services_service'].str.split('//')
-#instant_fuel = instant_fuel.explode('services_service')
-#instant_fuel.reset_index(drop=True, inplace=True)
+st.write(instant_fuel.head(50))
 
 st.header('III. Data Visualisation')
+
+st.write('Discover the data by some plots:')
+
+ #'Analyse de la variation saisonnière des prix',
+selection_plot=st.selectbox('Corrélation entre la population et le prix du carburant', 'Heatmap des prix par région', 'Analyse de la disponibilité 24/24', 'Graphique à barres empilées des types de services par département et par région', 'Graphique à barres empilées des types de services par département')
+if (selection_plot=='Corrélation entre la population et le prix du carburant'):
+    st.write('Corrélation entre la population et le prix du carburant:')
+    
+
+
+
+st.write('Discover the data by the map:')
 
 initial_location = [46.6031, 2.3522]
 initial_zoom = 5
@@ -289,7 +270,7 @@ def update_map(data, location, zoom, add_marker=False):
         popup_content = f"""<div style='width: 200px; height: 150px;'>
                             Adresse: {row['adresse']}, {row['ville']} ({row['cp']}) <br><br>
                             Carburants: <br>{fuel_info} <br>
-                            Horaires: {row['ouverture']} - {row['fermeture']}
+                            Automate 24/24: {'oui' if row['horaires_automate_24_24'] == 1 else 'non'} <br>
                             </div>"""
         folium.Popup(popup_content).add_to(marker)
         marker.add_to(m)
@@ -330,7 +311,39 @@ for x, col in zip(instant_fuel['prix_nom'].unique(), [col1, col2, col3, col4, co
     initial_value = True if x == 'Gazole' else False
     fuel_checkboxes[x] = col.checkbox(x, key=checkbox_key, value=initial_value)
 selected_fuels = [fuel_type for fuel_type, selected in fuel_checkboxes.items() if selected]
+st.write(' ')
 
+st.write('Select the services needed (if you need one):')
+only_services = instant_fuel['services_service'].str.split('//')
+only_services = only_services.explode('services_service')
+only_services.reset_index(drop=True, inplace=True)
+
+# Get unique services
+unique_services = only_services.unique()
+
+# Determine the number of columns per row
+num_columns_per_row = 3
+
+# Calculate the number of rows needed
+num_rows = len(unique_services) // num_columns_per_row
+if len(unique_services) % num_columns_per_row != 0:
+    num_rows += 1
+
+# Create a dictionary to store the selected services
+services_checkboxes = {}
+
+for i in range(num_rows):
+    # Create a row for checkboxes
+    row = st.columns(num_columns_per_row)
+    for j in range(num_columns_per_row):
+        index = i * num_columns_per_row + j
+        if index < len(unique_services):
+            service = unique_services[index]
+            checkbox_key = f"checkbox_{service}"
+            services_checkboxes[service] = row[j].checkbox(service, key=checkbox_key)
+
+# Get the selected services
+selected_services = [service for service, selected in services_checkboxes.items() if selected]
 
 # Initialize the map with the default initial_location and initial_zoom
 zoom_level = initial_zoom  # Set the initial zoom level
@@ -348,7 +361,12 @@ if search_input:
 else:
     search_location = initial_location
 
+selected_fuels = [fuel_type for fuel_type, selected in fuel_checkboxes.items() if selected]
 filtered_data = instant_fuel[instant_fuel['prix_nom'].isin(selected_fuels)]
+
+# Filter the DataFrame based on selected services
+filtered_services = [service for service, selected in services_checkboxes.items() if selected]
+filtered_data = filtered_data[filtered_data['services_service'].str.contains('|'.join(filtered_services))]
 
 # Check if the "Search" button is clicked
 if search_button:
@@ -369,8 +387,6 @@ filtered_map = update_map(filtered_data, search_location, zoom_level, add_marker
 
 # Display the map
 st.components.v1.html(filtered_map._repr_html_(), height=600)
-
-st.write(instant_fuel.head(30))
 
 instant_fuel['date'] = pd.to_datetime(instant_fuel['date'])
 instant_fuel = instant_fuel.sort_values(by='date', ascending=True)
@@ -423,7 +439,5 @@ fig.update_yaxes(title_text='Mean Price')
 fig.update_xaxes(range=["2023-01-01", instant_fuel['date'].max()])
 fig.add_trace(go.Scatter(x=[], y=[], mode='markers', name='dummy', showlegend=True))
 st.plotly_chart(fig)
-
-st.write(instant_fuel.head(30))
 
 st.header('IV. Conclusion')
