@@ -30,18 +30,30 @@ You can access to the project by different ways: by using the python file or by 
 
 If you want the access it from the python file:
     - Open anaconda
+
     ![Alt text](image.png)
+
     - Create a new virtual environment
+
     ![Alt text](image-1.png)
+
     - Open the terminal
+
     ![Alt text](image-2.png)
+
     - Make sure you installed all the librairies needed : pip install streamlit pandas numpy matplotlib Pillow seaborn folium plotly geopy
                                                           pip install folium-plugins
+
     - Launch VSCODE and also install all the librairies needed (in the VSCODE terminal)
+
     ![Alt text](image-4.png)
+
     - Run the python script of VSCODE
+
     ![Alt text](image-3.png)
+
     - Copy the terminal result on the environment terminal (anaconda): streamlit run -...
+    
     ![Alt text](image-5.png)
 
 II] Screenshots of the different stages of the streamlit page
