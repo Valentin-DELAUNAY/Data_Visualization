@@ -216,7 +216,7 @@ instant_fuel['station_category'] = instant_fuel['id'].map(station_category_mappi
 st.header('III. Data Visualisation')
 
 st.subheader("Discover the data by some plots:")
-plot_data=st.selectbox("Select the type of plot you want to see", ["The distribution of the fuel prices (France, Region, Department, City)", "Mean price of each type of fuel (France, Region, Departement, City)", "Number of stations offering each type of fuel (France, Region, Department, City)", "Number of 24h/24h stations (France, Region, Department, City)"])
+plot_data=st.selectbox("Select the type of plot you want to see", ["The distribution of the fuel prices (France, Region, Department, City)", "Mean price of each type of fuel (France, Region, Departement, City)", "Number of stations offering each type of fuel (France, Region, Department, City)", "Number of 24h/24h stations (France, Region, Department, City)", "Top 10 of the lowest price stations (France, Region, Department, City)"])
 if plot_data == "The distribution of the fuel prices (France, Region, Department, City)":
     st.subheader("- The distribution of fuel prices in France is as follows:")
     selected_fuel_france = st.selectbox("Select Fuel Type", instant_fuel["prix_nom"].unique(), key="fuel_select_france")
@@ -406,6 +406,77 @@ elif (plot_data=="Number of 24h/24h stations (France, Region, Department, City)"
     plt.ylabel("Number of Stations")
     plt.title(f"Number of 24h/24h Stations in {selected_city}")
     st.pyplot(plt)
+elif (plot_data=="Top 10 of the lowest price stations (France, Region, Department, City)"):
+    fuel_types = instant_fuel["prix_nom"].unique()
+    selected_fuel = st.selectbox("Select Fuel Type for all the plots:", fuel_types)
+    filtered_data = instant_fuel[instant_fuel["prix_nom"] == selected_fuel]
+    st.write(' ')
+    top_10_lowest_prices = filtered_data.sort_values(by="prix_valeur").head(10)
+    st.subheader("- Top 10 of the lowest price stations in France:")
+    plt.figure(figsize=(10, 6))
+    plt.bar(top_10_lowest_prices["id"].astype(str), top_10_lowest_prices["prix_valeur"])
+    plt.xlabel("Station ID")
+    plt.ylabel("Lowest Price")
+    plt.title("Top 10 of the lowest price stations in France")
+    st.pyplot(plt)
+    st.write(' ')
+    for index, row in top_10_lowest_prices.iterrows():
+        st.write(f"Station informations about {row['id']}: {row['adresse']}, {row['ville']} ({row['cp']})")
+        st.write(f"Price of {row['prix_nom']}: {row['prix_valeur']} €")
+        st.write(' ')
+    st.write(' ')
+
+    st.subheader("- Top 10 of the lowest price stations in a region:")
+    selected_reg = st.selectbox("Select Region", instant_fuel["reg_name"].unique())
+    filtered_data = instant_fuel[(instant_fuel["reg_name"] == selected_reg) & (instant_fuel["prix_nom"] == selected_fuel)]
+    top_10_lowest_prices = filtered_data.sort_values(by="prix_valeur").head(10)
+    plt.figure(figsize=(10, 6))
+    plt.bar(top_10_lowest_prices["id"].astype(str), top_10_lowest_prices["prix_valeur"])
+    plt.xlabel("Station ID")
+    plt.ylabel("Lowest Price")
+    plt.title(f"Top 10 of the lowest price stations in {selected_reg}")
+    st.pyplot(plt)
+    st.write(' ')
+    for index, row in top_10_lowest_prices.iterrows():
+        st.write(f"Station informations about {row['id']}: {row['adresse']}, {row['ville']} ({row['cp']})")
+        st.write(f"Price of {row['prix_nom']}: {row['prix_valeur']} €")
+        st.write(' ')
+    st.write(' ')
+    
+    st.subheader("- Top 10 of the lowest price stations in a department:")
+    selected_reg = st.selectbox("Select Region", instant_fuel["dep_name"].unique())
+    filtered_data = instant_fuel[(instant_fuel["dep_name"] == selected_reg) & (instant_fuel["prix_nom"] == selected_fuel)]
+    top_10_lowest_prices = filtered_data.sort_values(by="prix_valeur").head(10)
+    plt.figure(figsize=(10, 6))
+    plt.bar(top_10_lowest_prices["id"].astype(str), top_10_lowest_prices["prix_valeur"])
+    plt.xlabel("Station ID")
+    plt.ylabel("Lowest Price")
+    plt.title(f"Top 10 of the lowest price stations in {selected_reg}")
+    st.pyplot(plt)
+    st.write(' ')
+    for index, row in top_10_lowest_prices.iterrows():
+        st.write(f"Station informations about {row['id']}: {row['adresse']}, {row['ville']} ({row['cp']})")
+        st.write(f"Price of {row['prix_nom']}: {row['prix_valeur']} €")
+        st.write(' ')
+    st.write(' ')
+    
+    st.subheader("- Top 10 of the lowest price stations in a city:")
+    cities = sorted(instant_fuel["ville"].unique())
+    selected_city = st.selectbox("Select a city", cities, index=cities.index("Paris"), key="city_select")
+    filtered_data = instant_fuel[(instant_fuel["ville"] == selected_city) & (instant_fuel["prix_nom"] == selected_fuel)]
+    top_10_lowest_prices = filtered_data.sort_values(by="prix_valeur").head(10)
+    plt.figure(figsize=(10, 6))
+    plt.bar(top_10_lowest_prices["id"].astype(str), top_10_lowest_prices["prix_valeur"])
+    plt.xlabel("Station ID")
+    plt.ylabel("Lowest Price")
+    plt.title(f"Top 10 of the lowest price stations in {selected_city}")
+    st.pyplot(plt)
+    st.write(' ')
+    for index, row in top_10_lowest_prices.iterrows():
+        st.write(f"Station informations about {row['id']}: {row['adresse']}, {row['ville']} ({row['cp']})")
+        st.write(f"Price of {row['prix_nom']}: {row['prix_valeur']} €")
+        st.write(' ')
+    st.write(' ')
 
 st.write(' ')
 st.subheader('Discover the data by the map:')
