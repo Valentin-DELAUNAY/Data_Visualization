@@ -1,8 +1,7 @@
-# Data_Visualization
+# PS: Please, let the time for the streamlit page to display everything. Sometimes, it will take time (due to the specification of the computer, ...)
+## Rarely, the page wont display everything or a part of the dataset. In this case, please refresh the page.
+
 # Data Visualisation project, Fuel prices in France - Instant flow
- 
-# Please, let the time for the streamlit page to display everything. Sometimes, it will take time (due to the specification of the computer, ...)
-# Rarely, the page wont display everything or a part of the dataset. In this case, please refresh the page.
  
 ## Description du Projet :
 In this project, I use a dataset entitled "Fuel prices in France - Instant flow" from the French government site, Data.gouv.fr.
