@@ -1,1 +1,10 @@
+streamlit
+pandas
+numpy
+matplotlib
+Pillow
+seaborn
+folium
+plotly
+geopy
 missingno
