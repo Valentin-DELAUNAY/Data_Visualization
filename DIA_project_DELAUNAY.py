@@ -135,16 +135,10 @@ elif (presentation_selection=='The desciption of the dataset'):
     st.write('The dataset have ' + str(instant_fuel.shape[1]) +' columns in total.')
 elif (presentation_selection=='The shape of the dataset'):
     st.write('The dataset have ' + str(instant_fuel.shape[0]) +' rows and ' + str(instant_fuel.shape[1]) +' columns in total.')
-elif (presentation_selection=='The number of missing values and the number of duplicates'):
+elif presentation_selection == 'The number of missing values and the number of duplicates':
     st.write('The number of missing values in the dataset is:')
-    msno.bar(instant_fuel)
-    plt.savefig('missingno_bar_chart.png')
-    image_path = 'missingno_bar_chart.png'
-    image_width = 900
-    image_height = 450
-    image = Image.open('missingno_bar_chart.png')
-    image = image.resize((image_width, image_height), Image.ANTIALIAS)
-    st.image(image, caption='Missing Values Bar Chart', use_column_width=False)
+    st_msno_chart = msno.bar(instant_fuel)
+    st.pyplot(st_msno_chart)
     st.write('The number of duplicates in the dataset is: ' + str(instant_fuel.duplicated().sum()))
 
 #Preparation of the dataset:
