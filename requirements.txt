@@ -8,3 +8,4 @@ folium
 plotly
 geopy
 missingno
+tabulate
