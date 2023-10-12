@@ -1,14 +1,9 @@
-# PS: Please, let the time for the streamlit page to display everything. Sometimes, it will take time (due to the specification of the computer, ...)
+# PS: Please, let the time for the streamlit page to display everything. Sometimes, it will take time (due to the specification of the computer, the large amount of data, ...)
 Rarely, the page wont display everything or a part of the dataset. In this case, please refresh the page.
 
 # Data Visualisation project, Fuel prices in France - Instant flow
 
-
-
-
-
-
-## Description du Projet :
+## Description of the project:
 In this project, I use a dataset entitled "Fuel prices in France - Instant flow" from the French government site, Data.gouv.fr.
 This dataset can be consulted by following this link: https://www.data.gouv.fr/fr/datasets/prix-des-carburants-en-france-flux-instantane/.
 These data are extracted from the “Fuel Prices” information system and are linked to the fuel sales points listed on the Fuel Prices website, in accordance with a ministerial decree dated December 12, 2006.
