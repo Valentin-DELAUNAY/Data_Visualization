@@ -9,3 +9,4 @@ plotly
 geopy
 missingno
 tabulate
+pillow
