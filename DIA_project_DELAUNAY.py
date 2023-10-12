@@ -135,11 +135,10 @@ elif (presentation_selection=='The desciption of the dataset'):
     st.write('The dataset have ' + str(instant_fuel.shape[1]) +' columns in total.')
 elif (presentation_selection=='The shape of the dataset'):
     st.write('The dataset have ' + str(instant_fuel.shape[0]) +' rows and ' + str(instant_fuel.shape[1]) +' columns in total.')
-elif presentation_selection == 'The number of missing values and the number of duplicates':
+elif (presentation_selection=='The number of missing values and the number of duplicates'):
     st.write('The number of missing values in the dataset is:')
-    st_msno_chart = msno.bar(instant_fuel)
-    st.image(st_msno_chart)
-    st.write('The number of duplicates in the dataset is: ' + str(instant_fuel.duplicated().sum()))
+    st.bar_chart(instant_fuel.isnull().sum())
+    st.write('There is ' + str(instant_fuel.duplicated().sum()) + ' values duplicated in the dataset.')
 
 #Preparation of the dataset:
 instant_fuel['date'] = pd.to_datetime(instant_fuel['date']).dt.date
