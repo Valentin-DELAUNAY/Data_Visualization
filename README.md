@@ -1,8 +1,13 @@
 # PS: Please, let the time for the streamlit page to display everything. Sometimes, it will take time (due to the specification of the computer, ...)
-## Rarely, the page wont display everything or a part of the dataset. In this case, please refresh the page.
+Rarely, the page wont display everything or a part of the dataset. In this case, please refresh the page.
 
 # Data Visualisation project, Fuel prices in France - Instant flow
- 
+
+
+
+
+
+
 ## Description du Projet :
 In this project, I use a dataset entitled "Fuel prices in France - Instant flow" from the French government site, Data.gouv.fr.
 This dataset can be consulted by following this link: https://www.data.gouv.fr/fr/datasets/prix-des-carburants-en-france-flux-instantane/.
@@ -28,7 +33,7 @@ The project is divided into 5 parts: the introduction, a short presentation of t
     II] Screenshots of the different stages of the streamlit page
  
 ## I] Use and installation
-You can access to the project by different ways: by using the python file or by the link: 
+You can access to the project by different ways: by using the python file or by the link: https://datavisualization-instant-fuel.streamlit.app/
  
 If you want the access it from the python file:
 
