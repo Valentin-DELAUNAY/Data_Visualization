@@ -138,9 +138,7 @@ elif (presentation_selection=='The shape of the dataset'):
 elif presentation_selection == 'The number of missing values and the number of duplicates':
     st.write('The number of missing values in the dataset is:')
     st_msno_chart = msno.bar(instant_fuel)
-    st.pyplot(st_msno_chart)
-    st.set_option('deprecation.showPyplotGlobalUse', False)
-    st.image('path/to/your/saved/image.png')
+    st.image(st_msno_chart)
     st.write('The number of duplicates in the dataset is: ' + str(instant_fuel.duplicated().sum()))
 
 #Preparation of the dataset:
