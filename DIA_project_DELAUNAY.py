@@ -1,3 +1,4 @@
+#Importation of the libraries:
 import pandas as pd
 import numpy as np
 import missingno as msno
@@ -12,6 +13,7 @@ import plotly.graph_objects as go
 from geopy.geocoders import Nominatim
 import json
 
+#Creation of the sidebar:
 st.sidebar.title('Menu')
 st.sidebar.subheader('Data Visualisation project')
 st.sidebar.markdown('   ')
@@ -73,6 +75,7 @@ instant_fuel=pd.read_csv('https://data.economie.gouv.fr/explore/dataset/prix-car
 
 st.title('Data Visualisation project, Fuel prices in France - Instant flow')
 
+#Modification of some type of columns:
 instant_fuel['prix_maj'] = pd.to_datetime(instant_fuel['prix_maj'], utc=True)
 instant_fuel['date'] = instant_fuel['prix_maj'].dt.date
 instant_fuel['time'] = instant_fuel['prix_maj'].dt.time
@@ -87,6 +90,7 @@ formatted_max_time = max_time.strftime('%H:%M:%S')
 
 st.markdown('Last update: ' + formatted_date_max + ' at ' + formatted_max_time)
 
+#Presentation of the project (introduction):
 st.header('I. Why this project ?')
 st.write('In the current context, the "Fuel prices in France - Instant flow dataset" holds significant relevance due to the global challenges surrounding energy consumption, environmental sustainability, and economic stability.')
 st.write('With increasing fuel demand, particularly in the transportation sector, tracking and analyzing fuel prices in France is crucial. It provides essential insights into the economic impact of rising fuel costs on consumers, businesses, and the overall economy.')
@@ -175,6 +179,7 @@ instant_fuel.drop(columns=['pop', 'prix_id', 'com_arm_code', 'epci_code', 'dep_c
 mean_prices = instant_fuel.groupby('prix_nom')['prix_valeur'].mean().reset_index()
 instant_fuel = instant_fuel.merge(mean_prices, on='prix_nom', suffixes=('', '_mean'))
 
+#Categorization of the fuel prices:
 def categorize_prix(row):
     if row['prix_valeur'] > (1.02 * row['prix_valeur_mean']):
         return 'cher'
@@ -225,7 +230,7 @@ if plot_data == "The distribution of the fuel prices (France, Region, Department
     st.write(' ')
 
     st.subheader("- The distribution of fuel prices for regions is as follows:")
-    selected_reg = st.selectbox("Select Region", instant_fuel["reg_name"].unique(), key="region_select")
+    selected_reg = st.selectbox("Select region", instant_fuel["reg_name"].unique(), key="region_select")
     selected_fuel = st.selectbox("Select Fuel Type", instant_fuel["prix_nom"].unique(), key="fuel_select_region")
     filtered_data = instant_fuel[(instant_fuel["reg_name"] == selected_reg) & (instant_fuel["prix_nom"] == selected_fuel)]
     plt.figure(figsize=(10, 6))
@@ -237,7 +242,7 @@ if plot_data == "The distribution of the fuel prices (France, Region, Department
     st.write('Number of stations in ' + selected_reg + ' giving ' + selected_fuel + ' : ' + str(len(filtered_data)))
 
     st.subheader("- The distribution of fuel prices for departments is as follows:")
-    selected_reg = st.selectbox("Select Region", instant_fuel["dep_name"].unique(), key="region_select_dept")
+    selected_reg = st.selectbox("Select departments", instant_fuel["dep_name"].unique(), key="region_select_dept")
     selected_fuel = st.selectbox("Select Fuel Type", instant_fuel["prix_nom"].unique(), key="fuel_select_dept")
     filtered_data = instant_fuel[(instant_fuel["dep_name"] == selected_reg) & (instant_fuel["prix_nom"] == selected_fuel)]
     plt.figure(figsize=(10, 6))
@@ -274,7 +279,7 @@ elif (plot_data=="Mean price of each type of fuel (France, Region, Departement, 
     st.write(' ')
 
     st.subheader("- Mean price of each type of fuel in a region:")
-    selected_reg = st.selectbox("Select Region", instant_fuel["reg_name"].unique())
+    selected_reg = st.selectbox("Select region", instant_fuel["reg_name"].unique())
     filtered_data = instant_fuel[instant_fuel["reg_name"] == selected_reg]
     plt.figure(figsize=(10, 6))
     plt.bar(filtered_data['prix_nom'].unique(), filtered_data.groupby("prix_nom")["prix_valeur"].mean())
@@ -286,7 +291,7 @@ elif (plot_data=="Mean price of each type of fuel (France, Region, Departement, 
     st.write(' ')
 
     st.subheader("- Mean price of each type of fuel in a department:")
-    selected_reg = st.selectbox("Select Region", instant_fuel["dep_name"].unique())
+    selected_reg = st.selectbox("Select department", instant_fuel["dep_name"].unique())
     filtered_data = instant_fuel[instant_fuel["dep_name"] == selected_reg]
     plt.figure(figsize=(10, 6))
     plt.bar(filtered_data['prix_nom'].unique(), filtered_data.groupby("prix_nom")["prix_valeur"].mean())
@@ -319,7 +324,7 @@ elif (plot_data=="Number of stations offering each type of fuel (France, Region,
     st.write(' ')
 
     st.subheader("- Number of stations offering fuel in a region:")
-    selected_reg = st.selectbox("Select Region", instant_fuel["reg_name"].unique())
+    selected_reg = st.selectbox("Select region", instant_fuel["reg_name"].unique())
     filtered_data = instant_fuel[instant_fuel["reg_name"] == selected_reg]
     plt.figure(figsize=(10, 6))
     plt.bar(filtered_data['prix_nom'].unique(), filtered_data['prix_nom'].value_counts())
@@ -331,7 +336,7 @@ elif (plot_data=="Number of stations offering each type of fuel (France, Region,
     st.write(' ')
 
     st.subheader("- Number of stations offering fuel in a department:")
-    selected_reg = st.selectbox("Select Region", instant_fuel["dep_name"].unique())
+    selected_reg = st.selectbox("Select department", instant_fuel["dep_name"].unique())
     filtered_data = instant_fuel[instant_fuel["dep_name"] == selected_reg]
     plt.figure(figsize=(10, 6))
     plt.bar(filtered_data['prix_nom'].unique(), filtered_data['prix_nom'].value_counts())
@@ -366,7 +371,7 @@ elif (plot_data=="Number of 24h/24h stations (France, Region, Department, City)"
     st.write(' ')
 
     st.subheader("- Number of 24h/24h stations in a region:")
-    selected_reg = st.selectbox("Select Region", instant_fuel["reg_name"].unique())
+    selected_reg = st.selectbox("Select region", instant_fuel["reg_name"].unique())
     filtered_data = instant_fuel[instant_fuel["reg_name"] == selected_reg]
     plt.figure(figsize=(10, 6))
     plt.bar(filtered_data['horaires_automate_24_24'].unique(), filtered_data['horaires_automate_24_24'].value_counts())
@@ -378,7 +383,7 @@ elif (plot_data=="Number of 24h/24h stations (France, Region, Department, City)"
     st.write(' ')
 
     st.subheader("- Number of 24h/24h stations in a department:")
-    selected_reg = st.selectbox("Select Region", instant_fuel["dep_name"].unique())
+    selected_reg = st.selectbox("Select department", instant_fuel["dep_name"].unique())
     filtered_data = instant_fuel[instant_fuel["dep_name"] == selected_reg]
     plt.figure(figsize=(10, 6))
     plt.bar(filtered_data['horaires_automate_24_24'].unique(), filtered_data['horaires_automate_24_24'].value_counts())
@@ -420,7 +425,7 @@ elif (plot_data=="Top 10 of the lowest price stations (France, Region, Departmen
     st.write(' ')
 
     st.subheader("- Top 10 of the lowest price stations in a region:")
-    selected_reg = st.selectbox("Select Region", instant_fuel["reg_name"].unique())
+    selected_reg = st.selectbox("Select region", instant_fuel["reg_name"].unique())
     filtered_data = instant_fuel[(instant_fuel["reg_name"] == selected_reg) & (instant_fuel["prix_nom"] == selected_fuel)]
     top_10_lowest_prices = filtered_data.sort_values(by="prix_valeur").head(10)
     plt.figure(figsize=(10, 6))
@@ -437,7 +442,7 @@ elif (plot_data=="Top 10 of the lowest price stations (France, Region, Departmen
     st.write(' ')
     
     st.subheader("- Top 10 of the lowest price stations in a department:")
-    selected_reg = st.selectbox("Select Region", instant_fuel["dep_name"].unique())
+    selected_reg = st.selectbox("Select department", instant_fuel["dep_name"].unique())
     filtered_data = instant_fuel[(instant_fuel["dep_name"] == selected_reg) & (instant_fuel["prix_nom"] == selected_fuel)]
     top_10_lowest_prices = filtered_data.sort_values(by="prix_valeur").head(10)
     plt.figure(figsize=(10, 6))
@@ -474,6 +479,7 @@ elif (plot_data=="Top 10 of the lowest price stations (France, Region, Departmen
 st.write(' ')
 st.subheader('Discover the data by the map:')
 
+#Creation of the map
 initial_location = [46.6031, 2.3522]
 initial_zoom = 5
 
@@ -605,6 +611,7 @@ if search_button:
 filtered_map = update_map(filtered_data, search_location, zoom_level, add_marker)
 st.components.v1.html(filtered_map._repr_html_(), height=600)
 
+#Plot of the mean price of the fuel selected:
 instant_fuel['date'] = pd.to_datetime(instant_fuel['date'])
 instant_fuel = instant_fuel.sort_values(by='date', ascending=True)
 instant_fuel['price_change'] = instant_fuel['prix_valeur'].diff()
@@ -727,6 +734,7 @@ fig.update_xaxes(range=["2023-01-01", instant_fuel['date'].max()])
 fig.add_trace(go.Scatter(x=[], y=[], mode='markers', name='dummy', showlegend=True))
 st.plotly_chart(fig)
 
+#Last part, the conclusion:
 st.header('IV. Conclusion')
 st.write("In conclusion, the study of instantaneous fuel prices in France reflects a complex and fluctuating dynamic, strongly influenced by various economic, geopolitical and environmental factors. The observation that prices tend to fall thanks to the actions of large retailers selling at cost price is interesting, because it shows that competition in the fuel market can have positive repercussions on consumers' wallets.")
 st.write("However, it is crucial to note that this downward price trend may be fleeting, and that several external factors can reverse this trend. Geopolitical conflicts, such as the Ukraine-Russia war and the Israel-Palestine conflict, have traditionally impacted global oil markets by causing sharp fluctuations in oil prices. Volatility in fuel prices due to these events may negate the temporary benefits of large retailers selling at cost.")
