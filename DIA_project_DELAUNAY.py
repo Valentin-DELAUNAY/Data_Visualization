@@ -42,6 +42,8 @@ st.sidebar.markdown(
     <br>
     <div class="conteneur">
         <p>Developer : Valentin Delaunay</p>
+        <p>Efrei Paris- Promo 2025</p>
+        <p>#datavz2023efrei</p>
         <div class="ma-div">
             <a href="https://www.linkedin.com/in/valentin-delaunay-ingenieur-data/" target="_blank" style="text-decoration: none; color:white">
             <div style="background-color: #0077B5; color: white; padding: 10px 20px; border-radius: 5px; display: flex; align-items: center; width: 200px; justify-content: center;">
@@ -72,7 +74,6 @@ st.sidebar.markdown(
 )
 
 instant_fuel=pd.read_csv('https://data.economie.gouv.fr/explore/dataset/prix-carburants-fichier-instantane-test-ods-copie/download?format=csv&timezone=Europe/Berlin&use_labels_for_header=false', delimiter=';')
-
 st.title('Data Visualisation project, Fuel prices in France - Instant flow')
 
 #Modification of some type of columns:
@@ -113,7 +114,7 @@ if (presentation_selection=='The name of the columns'):
     with columns[1]:
         st.markdown(right_table)
     st.write(' ')
-    st.write('The dataset have ' + str(instant_fuel.shape[1]) +' columns in total.')
+    st.write('The dataset have ' + str(instant_fuel.shape[0]) + ' lines and ' + str(instant_fuel.shape[1]) +' columns in total.')
 elif (presentation_selection=='The first 20 lines'):
     st.write('The first 20 lines of the dataset are:')
     st.write(instant_fuel.head(20))
@@ -132,7 +133,7 @@ elif (presentation_selection=='The name of the columns with their type'):
     columns[0].dataframe(column_info_df_part1.set_index('Column Name'))
     columns[1].dataframe(column_info_df_part2.set_index('Column Name'))
     columns[2].dataframe(column_info_df_part3.set_index('Column Name'))
-    st.write('The dataset has ' + str(num_columns) + ' columns in total.')
+    st.write('The dataset have ' + str(instant_fuel.shape[0]) + ' lines and ' + str(instant_fuel.shape[1]) +' columns in total.')
 elif (presentation_selection=='The desciption of the dataset'):
     st.write('Some information about the dataset:')
     st.write(instant_fuel.describe())
@@ -153,6 +154,8 @@ instant_fuel['cp']=instant_fuel['cp'].round(2)
 instant_fuel['pop']=instant_fuel['pop'].astype(str)
 instant_fuel['adresse']=instant_fuel['adresse'].astype(str)
 instant_fuel['ville']=instant_fuel['ville'].astype(str)
+#drop all the stations permently closed
+instant_fuel = instant_fuel.dropna(subset=['horaires']) 
 instant_fuel['geom']=instant_fuel['geom'].astype(str)
 instant_fuel[['latitude', 'longitude']] = instant_fuel.geom.str.split(",",expand=True)
 instant_fuel['longitude']=instant_fuel['longitude'].astype(float)
@@ -358,7 +361,7 @@ elif (plot_data=="Number of stations offering each type of fuel (France, Region,
     plt.title(f"Number of Stations Offering Fuel in {selected_city}")
     st.pyplot(plt)
 elif (plot_data=="Number of 24h/24h stations (France, Region, Department, City)"):
-    mapping = {0: "non", 1: "oui"}
+    mapping = {0: "no", 1: "yes"}
     instant_fuel["horaires_automate_24_24"] = instant_fuel["horaires_automate_24_24"].map(mapping)
     st.subheader("- Number of 24h/24h stations in France:")
     plt.figure(figsize=(10, 6))
@@ -533,7 +536,6 @@ def update_map(data, location, zoom, add_marker=False):
     </div>
     """
     m.get_root().html.add_child(folium.Element(legend_html))
-    
     return m
 
 with st.form(key='search_form'):
@@ -740,3 +742,4 @@ st.write("In conclusion, the study of instantaneous fuel prices in France reflec
 st.write("However, it is crucial to note that this downward price trend may be fleeting, and that several external factors can reverse this trend. Geopolitical conflicts, such as the Ukraine-Russia war and the Israel-Palestine conflict, have traditionally impacted global oil markets by causing sharp fluctuations in oil prices. Volatility in fuel prices due to these events may negate the temporary benefits of large retailers selling at cost.")
 st.write("In addition, the current context is marked by a government trend towards the promotion of electric vehicles and alternative energies, with the aim of reducing dependence on fossil fuels and combating climate change. This policy could potentially result in taxes or regulations aimed at discouraging the use of gasoline or diesel vehicles, which could ultimately increase costs for motorists.")
 st.write("Ultimately, the study of instantaneous fuel prices in France highlights the need for consumers to remain attentive to market fluctuations, while considering more sustainable alternatives, such as the adoption of electric vehicles, to deal with uncertainties related to fuel prices and geopolitical issues. Government policies and the actions of large retailers can play a role, but diversifying means of transport and reducing dependence on fossil fuels are crucial challenges to address in a constantly changing global context.")
+st.image('https://images.datacamp.com/image/upload/v1640050215/image27_frqkzv.png', width=700)
