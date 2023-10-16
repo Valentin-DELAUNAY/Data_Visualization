@@ -78,6 +78,9 @@ Moreover, the column 'horaires' was unusable (always changing)
 You have the possibility to get some simple and usefull vizualisation. Among them:
 ![Alt text](image-7.png)
 
+Moreover, you can access to an interactive folium map and to his linked heatmap. You can search whatever you want (adress, city, department, region, ...), choose one or more fuels and filter your research with some services.
+Finally, you can see a plot of the mean, median and price variation of a selected fuel.
+
 ### Finaly, the conclusion
 It's a quick overview of the results.
 I have also added ideas that could explain the drop in prices but also a possible increase in the days to come.
