@@ -96,7 +96,7 @@ st.header('I. Why this project ?')
 st.write('In the current context, the "Fuel prices in France - Instant flow dataset" holds significant relevance due to the global challenges surrounding energy consumption, environmental sustainability, and economic stability.')
 st.write('With increasing fuel demand, particularly in the transportation sector, tracking and analyzing fuel prices in France is crucial. It provides essential insights into the economic impact of rising fuel costs on consumers, businesses, and the overall economy.')
 st.write('Furthermore, as countries seek to transition towards cleaner and more sustainable energy sources, understanding the fluctuations in fuel prices can inform policies aimed at reducing carbon emissions and promoting alternative energy solutions. The dataset is updated daily and contains information on fuel prices in France.')
-
+st.write('Lien pour accéder au jeu de données: https://www.data.gouv.fr/fr/datasets/prix-des-carburants-en-france-flux-instantane/')
 st.header('II. Short presentation of data')
 
 presentation_selection=st.selectbox('Select the type of information you need:', ['The name of the columns', 'The first 20 lines', 'The name of the columns with their type', 'The desciption of the dataset', 'The shape of the dataset', 'The number of missing values and the number of duplicates'])
@@ -217,7 +217,7 @@ instant_fuel['station_category'] = instant_fuel['id'].map(station_category_mappi
 st.header('III. Data Visualisation')
 
 st.subheader("Discover the data by some plots:")
-plot_data=st.selectbox("Select the type of plot you want to see", ["The distribution of the fuel prices (France, Region, Department, City)", "Mean price of each type of fuel (France, Region, Departement, City)", "Number of stations offering each type of fuel (France, Region, Department, City)", "Number of 24h/24h stations (France, Region, Department, City)", "Top 10 of the lowest price stations (France, Region, Department, City)"])
+plot_data=st.selectbox("Select the type of plot you want to see", ["The distribution of the fuel prices (France, Region, Department, City)", "Mean price of each type of fuel (France, Region, Departement, City)", "Number of stations offering each type of fuel (France, Region, Department, City)", "Number of 24h/24h stations (France, Region, Department, City)", "Top 10 of the lowest price stations (France, Region, Department, City)", "Top 10 of the highest price stations (France, Region, Department, City)"])
 if plot_data == "The distribution of the fuel prices (France, Region, Department, City)":
     st.subheader("- The distribution of fuel prices in France is as follows:")
     selected_fuel_france = st.selectbox("Select Fuel Type", instant_fuel["prix_nom"].unique(), key="fuel_select_france")
@@ -361,39 +361,59 @@ elif (plot_data=="Number of stations offering each type of fuel (France, Region,
     plt.title(f"Number of Stations Offering Fuel in {selected_city}")
     st.pyplot(plt)
 elif (plot_data=="Number of 24h/24h stations (France, Region, Department, City)"):
-    mapping = {0: "no", 1: "yes"}
+    mapping = {0: "non", 1: "oui"}
     instant_fuel["horaires_automate_24_24"] = instant_fuel["horaires_automate_24_24"].map(mapping)
-    st.subheader("- Number of 24h/24h stations in France:")
+    sorted_data = instant_fuel.sort_values(by="horaires_automate_24_24")
     plt.figure(figsize=(10, 6))
-    plt.bar(instant_fuel["horaires_automate_24_24"].unique(), instant_fuel["horaires_automate_24_24"].value_counts())
+    plt.bar(sorted_data["horaires_automate_24_24"].unique(), sorted_data["horaires_automate_24_24"].value_counts())
     plt.xlabel("24h/24h")
     plt.ylabel("Number of Stations")
     plt.title("Number of 24h/24h Stations in France")
     st.pyplot(plt)
+    labels = sorted_data["horaires_automate_24_24"].unique()
+    sizes = sorted_data["horaires_automate_24_24"].value_counts()
+    fig1, ax1 = plt.subplots()
+    ax1.pie(sizes, labels=labels, autopct='%1.1f%%', shadow=True)
+    ax1.axis('equal')
+    st.pyplot(fig1)
     st.write(' ')
     st.write(' ')
 
     st.subheader("- Number of 24h/24h stations in a region:")
     selected_reg = st.selectbox("Select region", instant_fuel["reg_name"].unique())
     filtered_data = instant_fuel[instant_fuel["reg_name"] == selected_reg]
+    sorted_data = filtered_data.sort_values(by="horaires_automate_24_24")
     plt.figure(figsize=(10, 6))
-    plt.bar(filtered_data['horaires_automate_24_24'].unique(), filtered_data['horaires_automate_24_24'].value_counts())
+    plt.bar(sorted_data["horaires_automate_24_24"].unique(), sorted_data["horaires_automate_24_24"].value_counts())
     plt.xlabel("24h/24h")
     plt.ylabel("Number of Stations")
     plt.title(f"Number of 24h/24h Stations in {selected_reg}")
     st.pyplot(plt)
+    labels = sorted_data["horaires_automate_24_24"].unique()
+    sizes = sorted_data["horaires_automate_24_24"].value_counts()
+    fig1, ax1 = plt.subplots()
+    ax1.pie(sizes, labels=labels, autopct='%1.1f%%', shadow=True)
+    ax1.axis('equal')
+    st.pyplot(fig1)
     st.write(' ')
     st.write(' ')
 
     st.subheader("- Number of 24h/24h stations in a department:")
     selected_reg = st.selectbox("Select department", instant_fuel["dep_name"].unique())
     filtered_data = instant_fuel[instant_fuel["dep_name"] == selected_reg]
+    sorted_data = filtered_data.sort_values(by="horaires_automate_24_24")
     plt.figure(figsize=(10, 6))
-    plt.bar(filtered_data['horaires_automate_24_24'].unique(), filtered_data['horaires_automate_24_24'].value_counts())
+    plt.bar(sorted_data["horaires_automate_24_24"].unique(), sorted_data["horaires_automate_24_24"].value_counts())
     plt.xlabel("24h/24h")
     plt.ylabel("Number of Stations")
     plt.title(f"Number of 24h/24h Stations in {selected_reg}")
     st.pyplot(plt)
+    labels = sorted_data["horaires_automate_24_24"].unique()
+    sizes = sorted_data["horaires_automate_24_24"].value_counts()
+    fig1, ax1 = plt.subplots()
+    ax1.pie(sizes, labels=labels, autopct='%1.1f%%', shadow=True)
+    ax1.axis('equal')
+    st.pyplot(fig1)
     st.write(' ')
     st.write(' ')
 
@@ -401,12 +421,19 @@ elif (plot_data=="Number of 24h/24h stations (France, Region, Department, City)"
     cities = sorted(instant_fuel["ville"].unique())
     selected_city = st.selectbox("Select a city", cities, index=cities.index("Paris"), key="city_select")
     filtered_data = instant_fuel[instant_fuel["ville"] == selected_city]
+    sorted_data = filtered_data.sort_values(by="horaires_automate_24_24")
     plt.figure(figsize=(10, 6))
-    plt.bar(filtered_data['horaires_automate_24_24'].unique(), filtered_data['horaires_automate_24_24'].value_counts())
+    plt.bar(sorted_data["horaires_automate_24_24"].unique(), sorted_data["horaires_automate_24_24"].value_counts())
     plt.xlabel("24h/24h")
     plt.ylabel("Number of Stations")
     plt.title(f"Number of 24h/24h Stations in {selected_city}")
     st.pyplot(plt)
+    labels = sorted_data["horaires_automate_24_24"].unique()
+    sizes = sorted_data["horaires_automate_24_24"].value_counts()
+    fig1, ax1 = plt.subplots()
+    ax1.pie(sizes, labels=labels, autopct='%1.1f%%', shadow=True)
+    ax1.axis('equal')
+    st.pyplot(fig1)
 elif (plot_data=="Top 10 of the lowest price stations (France, Region, Department, City)"):
     fuel_types = instant_fuel["prix_nom"].unique()
     selected_fuel = st.selectbox("Select Fuel Type for all the plots:", fuel_types)
@@ -478,6 +505,63 @@ elif (plot_data=="Top 10 of the lowest price stations (France, Region, Departmen
         st.write(f"Price of {row['prix_nom']}: {row['prix_valeur']} €")
         st.write(' ')
     st.write(' ')
+elif plot_data == "Top 10 of the highest price stations (France, Region, Department, City)":
+    fuel_types = instant_fuel["prix_nom"].unique()
+    selected_fuel = st.selectbox("Select Fuel Type for all the plots:", fuel_types)
+    filtered_data = instant_fuel[instant_fuel["prix_nom"] == selected_fuel]
+    st.write(' ')
+    top_10_highest_prices = filtered_data.sort_values(by="prix_valeur", ascending=False).head(10)
+    st.subheader("- Top 10 of the highest price stations in France:")
+    plt.figure(figsize=(10, 6))
+    plt.bar(top_10_highest_prices["id"].astype(str), top_10_highest_prices["prix_valeur"])
+    plt.xlabel("Station ID")
+    plt.ylabel("Highest Price")
+    plt.title("Top 10 of the highest price stations in France")
+    st.pyplot(plt)
+    st.write(' ')
+    for index, row in top_10_highest_prices.iterrows():
+        st.write(f"Station informations about {row['id']}: {row['adresse']}, {row['ville']} ({row['cp']})")
+        st.write(f"Price of {row['prix_nom']}: {row['prix_valeur']} €")
+        st.write(' ')
+    st.write(' ')
+
+    st.subheader("- Top 10 of the highest price stations in a region:")
+    selected_reg = st.selectbox("Select region", instant_fuel["reg_name"].unique())
+    filtered_data = instant_fuel[(instant_fuel["reg_name"] == selected_reg) & (instant_fuel["prix_nom"] == selected_fuel)]
+    top_10_highest_prices = filtered_data.sort_values(by="prix_valeur", ascending=False).head(10)
+    plt.figure(figsize=(10, 6))
+    plt.bar(top_10_highest_prices["id"].astype(str), top_10_highest_prices["prix_valeur"])
+    plt.xlabel("Station ID")
+    plt.ylabel("Highest Price")
+    plt.title(f"Top 10 of the highest price stations in {selected_reg}")
+    st.pyplot(plt)
+    st.write(' ')
+    for index, row in top_10_highest_prices.iterrows():
+        st.write(f"Station informations about {row['id']}: {row['adresse']}, {row['ville']} ({row['cp']})")
+        st.write(f"Price of {row['prix_nom']}: {row['prix_valeur']} €")
+    
+    st.subheader("- Top 10 of the highest price stations in a department:")
+    selected_reg = st.selectbox("Select department", instant_fuel["dep_name"].unique())
+    filtered_data = instant_fuel[(instant_fuel["dep_name"] == selected_reg) & (instant_fuel["prix_nom"] == selected_fuel)]
+    top_10_highest_prices = filtered_data.sort_values(by="prix_valeur", ascending=False).head(10)
+    plt.figure(figsize=(10, 6))
+    plt.bar(top_10_highest_prices["id"].astype(str), top_10_highest_prices["prix_valeur"])
+    plt.xlabel("Station ID")
+    plt.ylabel("Highest Price")
+    plt.title(f"Top 10 of the highest price stations in {selected_reg}")
+    st.pyplot(plt)
+
+    st.subheader("- Top 10 of the highest price stations in a city:")
+    cities = sorted(instant_fuel["ville"].unique())
+    selected_city = st.selectbox("Select a city", cities, index=cities.index("Paris"), key="city_select")
+    filtered_data = instant_fuel[(instant_fuel["ville"] == selected_city) & (instant_fuel["prix_nom"] == selected_fuel)]
+    top_10_highest_prices = filtered_data.sort_values(by="prix_valeur", ascending=False).head(10)
+    plt.figure(figsize=(10, 6))
+    plt.bar(top_10_highest_prices["id"].astype(str), top_10_highest_prices["prix_valeur"])
+    plt.xlabel("Station ID")
+    plt.ylabel("Highest Price")
+    plt.title(f"Top 10 of the highest price stations in {selected_city}")
+    st.pyplot(plt)
 
 st.write(' ')
 st.subheader('Discover the data by the map:')
@@ -513,9 +597,9 @@ def update_map(data, location, zoom, add_marker=False):
             prix_categorie = station_row['prix_categorie']
             fuel_info += f"<span style='color:{colors.get(prix_categorie, 'green')}'>●</span> {prix_nom}: {prix_valeur} <br>"
         popup_content = f"""<div style='width: 200px; height: 150px;'>
-                            Adresse: {row['adresse']}, {row['ville']} ({row['cp']}) <br><br>
-                            Carburants: <br>{fuel_info} <br>
-                            Automate 24/24: {'oui' if row['horaires_automate_24_24'] == 1 else 'non'} <br>
+                            Adress: {row['adresse']}, {row['ville']} ({row['cp']}) <br><br>
+                            Fuel: <br>{fuel_info} <br>
+                            Automate 24/24: {'yes' if row['horaires_automate_24_24'] == 1 else 'no'} <br>
                             </div>"""
         folium.Popup(popup_content).add_to(marker)
         marker.add_to(m)
@@ -530,12 +614,23 @@ def update_map(data, location, zoom, add_marker=False):
     legend_html = """
     <div style="position: fixed; bottom: 50px; left: 50px; z-index:1000; background-color: white; padding: 10px; border: 2px solid gray;">
         <p><strong>Type of station</strong></p>
-        <p><i class="fa fa-circle" style="color: red;"></i> cher</p>
-        <p><i class="fa fa-circle" style="color: orange;"></i> moyen</p>
-        <p><i class="fa fa-circle" style="color: green;"></i> pas cher</p>
+        <p><i class="fa fa-circle" style="color: red;"></i> Expensive</p>
+        <p><i class="fa fa-circle" style="color: orange;"></i> Medium</p>
+        <p><i class="fa fa-circle" style="color: green;"></i> Low</p>
     </div>
     """
     m.get_root().html.add_child(folium.Element(legend_html))
+    return m
+
+def create_heatmap(data, location, zoom):
+    m = folium.Map(location=location, zoom_start=zoom)
+
+    heat_data = []
+    for _, row in data.iterrows():
+        heat_data.append([row['latitude'], row['longitude']])
+
+    HeatMap(heat_data).add_to(m)
+
     return m
 
 with st.form(key='search_form'):
@@ -601,7 +696,7 @@ filtered_data = filtered_data[filtered_data['services_service'].str.contains('|'
 if search_button:
     geolocator = Nominatim(user_agent="geocoder")
     location = geolocator.geocode(search_input)
-    
+
     if location:
         search_location = [location.latitude, location.longitude]
         zoom_level = 12
@@ -609,15 +704,25 @@ if search_button:
         st.success("Location found. Updating the map.")
     else:
         st.warning("Location not found. Displaying default view.")
+    filtered_map = update_map(filtered_data, search_location, zoom_level, add_marker)
+    heatmap_map = create_heatmap(filtered_data, search_location, zoom_level)
+    st.write("Filtered Map:")
+    st.components.v1.html(filtered_map._repr_html_(), height=600)
+    st.write("Heatmap:")
+    st.components.v1.html(heatmap_map._repr_html_(), height=600)
 
 filtered_map = update_map(filtered_data, search_location, zoom_level, add_marker)
 st.components.v1.html(filtered_map._repr_html_(), height=600)
+st.subheader('Heatmap:')
+heatmap_map = create_heatmap(filtered_data, initial_location, initial_zoom)
+st.components.v1.html(heatmap_map._repr_html_(), height=600)
 
 #Plot of the mean price of the fuel selected:
 instant_fuel['date'] = pd.to_datetime(instant_fuel['date'])
 instant_fuel = instant_fuel.sort_values(by='date', ascending=True)
 instant_fuel['price_change'] = instant_fuel['prix_valeur'].diff()
 
+st.subheader('Mean, median and variation of price of the fuel selected:')
 selected_fuel_types = st.selectbox('Select Fuel Types:', instant_fuel['prix_nom'].unique())
 filtered_data_0 = instant_fuel[instant_fuel['prix_nom'] == selected_fuel_types]
 mean_price = filtered_data_0['prix_valeur'].mean()
